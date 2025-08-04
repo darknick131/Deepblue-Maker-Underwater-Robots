@@ -1,0 +1,825 @@
+/**************************  Driver����ؾ����ʼ��ʾ��  **************************/
+
+
+/* ���ھ��ʾ�� */
+tagUART_T demoUart = 
+{
+	//���ڹ���ģʽ����
+	.tUARTHandle.Instance 						= USART1,					/* STM32 �����豸 */
+	.tUARTHandle.Init.BaudRate   				= 115200,					/* ���ڲ����� */
+	.tUARTHandle.Init.WordLength 				= UART_WORDLENGTH_8B,		/* ����λ���� */
+	.tUARTHandle.Init.StopBits   				= UART_STOPBITS_1,			/* ֹͣλ���� */
+	.tUARTHandle.Init.Parity     				= UART_PARITY_NONE,			/* У��λ���� */
+	.tUARTHandle.Init.HwFlowCtl  				= UART_HWCONTROL_NONE,		/* Ӳ���������� */
+	.tUARTHandle.Init.Mode       				= UART_MODE_TX_RX,			/* ����ģʽ */
+	.tUARTHandle.Init.OverSampling 				= UART_OVERSAMPLING_16,		/* ������ */
+
+#if defined (STM32L4_SGA_ENABLE)
+	.tUARTHandle.Init.OneBitSampling 			= UART_ONE_BIT_SAMPLE_DISABLE,
+	.tUARTHandle.AdvancedInit.AdvFeatureInit 	= UART_ADVFEATURE_NO_INIT,
+#endif
+	
+	.ucPriority									= 1,						/* �ж����ȼ� */
+	.ucSubPriority								= 3,						/* �ж������ȼ� */
+	
+	//����DMA���ղ�������
+	.tUartDMA.bRxEnable							= true,						/* DMA����ʹ�� */
+#ifdef STM32F1_SGA_ENABLE
+	.tUartDMA.tDMARx.Instance					= DMA1_Channel5,
+#endif
+#ifdef STM32F4_SGA_ENABLE
+	.tUartDMA.tDMARx.Instance					= DMA2_Stream2,
+	.tUartDMA.tDMARx.Init.Channel				= DMA_CHANNEL_4,
+#endif
+	.tUartDMA.tDMARx.Init.Direction				= DMA_PERIPH_TO_MEMORY,
+	.tUartDMA.tDMARx.Init.PeriphInc				= DMA_PINC_DISABLE,
+	.tUartDMA.tDMARx.Init.MemInc				= DMA_MINC_ENABLE,
+	.tUartDMA.tDMARx.Init.PeriphDataAlignment 	= DMA_PDATAALIGN_BYTE,
+	.tUartDMA.tDMARx.Init.MemDataAlignment	  	= DMA_MDATAALIGN_BYTE,
+	.tUartDMA.tDMARx.Init.Mode					= DMA_NORMAL,
+	.tUartDMA.tDMARx.Init.Priority				= DMA_PRIORITY_LOW,
+
+	.tRxInfo.usDMARxMAXSize             		= 100,              		/* DMA���ջ�������С ��С������Э����ֽ�*2���ϣ�ȷ�������һ���ܹ��ȶ�����һ������������֡*/
+
+	.tUartDMA.ucDMARxPriority					= 1,						/* DMA�����ж����ȼ� */
+	.tUartDMA.ucDMARxSubPriority				= 1,						/* DMA�����ж������ȼ� */
+	
+	//����DMA���Ͳ�������
+	.tUartDMA.bTxEnable							= true,						/* DMA����ʹ�� */
+#ifdef STM32F1_SGA_ENABLE
+	.tUartDMA.tDMATx.Instance					= DMA1_Channel4,
+#endif
+#ifdef STM32F4_SGA_ENABLE
+	.tUartDMA.tDMATx.Instance					= DMA2_Stream7,
+	.tUartDMA.tDMATx.Init.Channel				= DMA_CHANNEL_4,
+	.tUartDMA.tDMATx.Init.FIFOMode				= DMA_FIFOMODE_ENABLE,
+#endif
+	.tUartDMA.tDMATx.Init.Direction				= DMA_MEMORY_TO_PERIPH,
+	.tUartDMA.tDMATx.Init.PeriphInc				= DMA_PINC_DISABLE,
+	.tUartDMA.tDMATx.Init.MemInc				= DMA_MINC_ENABLE,
+	.tUartDMA.tDMATx.Init.PeriphDataAlignment	= DMA_PDATAALIGN_BYTE,
+	.tUartDMA.tDMATx.Init.MemDataAlignment		= DMA_MDATAALIGN_BYTE,
+	.tUartDMA.tDMATx.Init.Mode					= DMA_NORMAL,
+	.tUartDMA.tDMATx.Init.Priority				= DMA_PRIORITY_HIGH,
+
+	.tTxInfo.usDMATxMAXSize						= 50,						/* DMA���ͻ�������С */
+	
+	.tUartDMA.ucDMATxPriority					= 1,						/* DMA�����ж����ȼ� */
+	.tUartDMA.ucDMATxSubPriority				= 1,						/* DMA�����ж������ȼ� */
+
+	//����GPIO����
+	.tGPIO[0].tGPIOInit.Pin 					= GPIO_PIN_9,				/* GPIO���� */
+	.tGPIO[0].tGPIOInit.Mode 					= GPIO_MODE_AF_PP,			/* GPIOģʽ */
+	.tGPIO[0].tGPIOInit.Pull 					= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+	.tGPIO[0].tGPIOInit.Speed 					= GPIO_SPEED_FREQ_HIGH,		/* GPIO�ٶ� */	
+	.tGPIO[0].tGPIOPort 						= GPIOA,					/* GPIO���� */
+#ifdef STM32F1_SGA_ENABLE
+	.tGPIO[0].ucAFMode							= NO_REMAP,					/* GPIO��ӳ�� */
+#endif
+#ifdef STM32F4_SGA_ENABLE
+	.tGPIO[0].tGPIOInit.Alternate				= GPIO_AF7_USART1,
+#endif
+
+	.tGPIO[1].tGPIOInit.Pin 					= GPIO_PIN_10,				/* GPIO���� */
+	.tGPIO[1].tGPIOInit.Pull 					= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+	.tGPIO[1].tGPIOInit.Speed 					= GPIO_SPEED_FREQ_HIGH,		/* GPIO�ٶ� */	
+	.tGPIO[1].tGPIOPort 						= GPIOA,					/* GPIO���� */
+#ifdef STM32F1_SGA_ENABLE	
+	.tGPIO[1].tGPIOInit.Mode 					= GPIO_MODE_INPUT,			/* F4ϵ����Ҫ����Ϊ����ģʽ */
+	.tGPIO[1].ucAFMode							= NO_REMAP,					/* GPIO��ӳ�� */
+#endif
+#ifdef STM32F4_SGA_ENABLE
+	.tGPIO[1].tGPIOInit.Mode 					= GPIO_MODE_AF_PP,			/* F4ϵ����Ҫ����Ϊ�������� */
+	.tGPIO[1].tGPIOInit.Alternate				= GPIO_AF7_USART1,
+#endif
+};
+
+/* GPIO���ʾ�� */
+tagGPIO_T demoGPIO[3] =
+{
+	/* LED��� */
+	[0]=
+	{ 
+		.tGPIOInit.Pin 		= GPIO_PIN_13,				/* GPIO���� */
+		.tGPIOInit.Mode 	= GPIO_MODE_OUTPUT_PP,		/* GPIOģʽ */
+		.tGPIOInit.Pull 	= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+		.tGPIOInit.Speed 	= GPIO_SPEED_FREQ_HIGH,		/* GPIO�ٶ� */	
+		.tGPIOPort 			= GPIOD,					/* GPIO���� */
+	},
+	/* LED�̵� */
+	[1]=
+	{ 
+		.tGPIOInit.Pin 		= GPIO_PIN_14,				/* GPIO���� */
+		.tGPIOInit.Mode 	= GPIO_MODE_OUTPUT_PP,		/* GPIOģʽ */
+		.tGPIOInit.Pull 	= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+		.tGPIOInit.Speed 	= GPIO_SPEED_FREQ_HIGH,		/* GPIO�ٶ� */	
+		.tGPIOPort 			= GPIOD,					/* GPIO���� */
+	},
+	/* LED���� */
+	[2]=
+	{ 
+		.tGPIOInit.Pin 		= GPIO_PIN_15,				/* GPIO���� */
+		.tGPIOInit.Mode 	= GPIO_MODE_OUTPUT_PP,		/* GPIOģʽ */
+		.tGPIOInit.Pull 	= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+		.tGPIOInit.Speed 	= GPIO_SPEED_FREQ_HIGH,		/* GPIO�ٶ� */	
+		.tGPIOPort 			= GPIOD,					/* GPIO���� */
+	},
+};
+
+/* SPI��Դ�ṹ��ʾ�� */
+tagSPI_T demoSPI = 
+{
+	.tSPIHandle.Instance 				= SPI2,
+	.tSPIHandle.Init.Mode 				= SPI_MODE_MASTER,
+	.tSPIHandle.Init.Direction 			= SPI_DIRECTION_2LINES,
+	.tSPIHandle.Init.DataSize 			= SPI_DATASIZE_8BIT,
+	.tSPIHandle.Init.CLKPolarity 		= SPI_POLARITY_LOW,
+	.tSPIHandle.Init.CLKPhase 			= SPI_PHASE_2EDGE,
+	.tSPIHandle.Init.NSS 				= SPI_NSS_SOFT,
+	.tSPIHandle.Init.BaudRatePrescaler  = SPI_BAUDRATEPRESCALER_256,
+	.tSPIHandle.Init.FirstBit 			= SPI_FIRSTBIT_MSB,
+	.tSPIHandle.Init.TIMode 			= SPI_TIMODE_DISABLE,
+	.tSPIHandle.Init.CRCCalculation 	= SPI_CRCCALCULATION_DISABLE,
+	.tSPIHandle.Init.CRCPolynomial 		= 7,	
+#if defined (STM32L4_SGA_ENABLE)
+	.tSPIHandle.Init.CRCLength 			= SPI_CRC_LENGTH_DATASIZE,
+	.tSPIHandle.Init.NSSPMode 			= SPI_NSS_PULSE_ENABLE,	
+#endif
+    /**SPI2 GPIO Configuration
+    PB13     ------> SPI2_SCK
+    PB14     ------> SPI2_MISO
+    PB15     ------> SPI2_MOSI
+    */
+    .tGPIO[0].tGPIOInit.Pin				= GPIO_PIN_13,
+	.tGPIO[0].tGPIOInit.Mode 			= GPIO_MODE_AF_PP,
+	.tGPIO[0].tGPIOInit.Speed 			= GPIO_SPEED_FREQ_HIGH,
+	.tGPIO[0].tGPIOPort					= GPIOB,
+	.tGPIO[0].ucAFMode					= NO_REMAP,
+
+	.tGPIO[1].tGPIOInit.Pin 			= GPIO_PIN_14,
+	.tGPIO[1].tGPIOInit.Mode 			= GPIO_MODE_AF_PP,
+	.tGPIO[1].tGPIOInit.Pull 			= GPIO_NOPULL,
+	.tGPIO[1].tGPIOPort					= GPIOB,
+	.tGPIO[1].ucAFMode					= NO_REMAP,
+
+	.tGPIO[2].tGPIOInit.Pin				= GPIO_PIN_15,
+	.tGPIO[2].tGPIOInit.Mode 			= GPIO_MODE_AF_PP,
+	.tGPIO[2].tGPIOInit.Speed 			= GPIO_SPEED_FREQ_HIGH,
+	.tGPIO[2].tGPIOPort					= GPIOB,
+	.tGPIO[2].ucAFMode					= NO_REMAP,
+
+};
+
+/* IIC��Դ�ṹ��ʾ�� */
+tagIICSoft_T demoIIC = 
+{
+	/* SCL�� */
+	.tIICSoft[0].tGPIOInit.Pin 			= GPIO_PIN_5,				/* GPIO���� */
+	.tIICSoft[0].tGPIOInit.Mode 		= GPIO_MODE_OUTPUT_PP,		/* GPIOģʽ */
+	.tIICSoft[0].tGPIOInit.Pull 		= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+	.tIICSoft[0].tGPIOInit.Speed 		= GPIO_SPEED_FREQ_HIGH,		/* GPIO�ٶ� */	
+	.tIICSoft[0].tGPIOPort 				= GPIOE,					/* GPIO���� */
+	
+	/* SDA�� */
+	.tIICSoft[1].tGPIOInit.Pin 			= GPIO_PIN_3,				/* GPIO���� */
+	.tIICSoft[1].tGPIOInit.Mode 		= GPIO_MODE_INPUT,			/* GPIOģʽ */
+	.tIICSoft[1].tGPIOInit.Pull 		= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+	.tIICSoft[1].tGPIOInit.Speed 		= GPIO_SPEED_FREQ_HIGH,		/* GPIO�ٶ� */	
+	.tIICSoft[1].tGPIOPort 				= GPIOE,					/* GPIO���� */
+};
+
+/* ��ʱ��Timer��Դ�ṹ��ʾ�� */
+tagTIM_T tTimer = 
+{
+	.tTimerHandle.Instance				= TIM6,						/* ��ʱ��6 */
+	.fTimingLength						= 100,						/* ��ʱʱ��(��λms) */
+
+	.ucPriority							= 2,						/* �ж����ȼ� */
+	.ucSubPriority						= 2,						/* �ж������ȼ� */
+};
+
+/* ����SPI��Դ�ṹ��ʾ�� */
+tagSPISoft_T SPI_soft[2] =
+{
+	[0]=
+	{
+	/**SPI Soft GPIO Configuration
+    PE2     ------> SPI_SCK
+	PE4     ------> SPI_MISO
+    PE3     ------> SPI_MOSI
+	PE1     ------> SPI_NSS 
+    */
+	.tSPISoft[0].tGPIOInit.Pin		= GPIO_PIN_2,
+	.tSPISoft[0].tGPIOInit.Mode 	= GPIO_MODE_OUTPUT_PP,
+	.tSPISoft[0].tGPIOInit.Pull 	= GPIO_PULLUP,
+	.tSPISoft[0].tGPIOInit.Speed 	= GPIO_SPEED_FREQ_HIGH,
+	.tSPISoft[0].tGPIOPort			= GPIOE,
+	.tSPISoft[0].ucAFMode			= NO_REMAP,
+	
+	.tSPISoft[1].tGPIOInit.Pin		= GPIO_PIN_4,
+	.tSPISoft[1].tGPIOInit.Mode 	= GPIO_MODE_INPUT,
+	.tSPISoft[1].tGPIOInit.Pull 	= GPIO_PULLUP,
+	.tSPISoft[1].tGPIOPort			= GPIOE,
+	.tSPISoft[1].ucAFMode			= NO_REMAP,
+	
+	.tSPISoft[2].tGPIOInit.Pin		= GPIO_PIN_3,
+	.tSPISoft[2].tGPIOInit.Mode 	= GPIO_MODE_OUTPUT_PP,
+	.tSPISoft[2].tGPIOInit.Pull 	= GPIO_PULLUP,
+	.tSPISoft[2].tGPIOInit.Speed 	= GPIO_SPEED_FREQ_HIGH,
+	.tSPISoft[2].tGPIOPort			= GPIOE,
+	.tSPISoft[2].ucAFMode			= NO_REMAP,
+	
+	.tSPISoft[3].tGPIOInit.Pin		= GPIO_PIN_1,
+	.tSPISoft[3].tGPIOInit.Mode 	= GPIO_MODE_OUTPUT_PP,
+	.tSPISoft[3].tGPIOInit.Pull 	= GPIO_PULLUP,
+	.tSPISoft[3].tGPIOInit.Speed 	= GPIO_SPEED_FREQ_HIGH,
+	.tSPISoft[3].tGPIOPort			= GPIOE,
+	.tSPISoft[3].ucAFMode			= NO_REMAP,
+	},
+};
+
+/* �������Ź�ʾ�� */
+tagIWDG_T demoIWDG = 
+{
+	.usResetTime = 1000,			/* 1Sι�����ʱ�� */
+};
+
+/* PWM example */
+tagPWM_T tPWMDemo[] =
+{
+	[0] =
+	{
+		.tPWMHandle.Instance	= TIM3,         	/* Timer 3 */
+		.fDuty					= 7.5,				/* Initial duty cycle (%) */
+		.ulFreq					= 50,				/* Frequency (Hz) */
+		.ucChannel				= TIM_CHANNEL_1,	/* Channel */
+		.tGPIO.tGPIOInit.Pin	= GPIO_PIN_6,		/* IO mapping */
+		.tGPIO.tGPIOPort		= GPIOA,			/* IO port mapping */
+#ifdef STM32F1_SGA_ENABLE
+		.tGPIO.ucAFMode			= NO_REMAP,			/* IO remap mode */
+#endif
+	},
+};
+
+/* Thruster PWM configuration example (4 thrusters) */
+tagPWM_T thrusterPWM[] =
+{
+	/* Thruster 1 - TIM3_CH1 (PA6) */
+	[0] =
+	{
+		.tPWMHandle.Instance	= TIM3,         	/* Timer 3 */
+		.fDuty					= 0.0,				/* Initial duty cycle (%) - 0% means stop */
+		.ulFreq					= 50,				/* Frequency (Hz) - 50Hz suitable for most ESCs */
+		.ucChannel				= TIM_CHANNEL_1,	/* Channel 1 */
+		.tGPIO.tGPIOInit.Pin	= GPIO_PIN_6,		/* PA6 pin */
+		.tGPIO.tGPIOPort		= GPIOA,			/* GPIOA port */
+#ifdef STM32F1_SGA_ENABLE
+		.tGPIO.ucAFMode			= NO_REMAP,			/* No remap mode */
+#endif
+	},
+	
+	/* Thruster 2 - TIM3_CH2 (PA7) */
+	[1] =
+	{
+		.tPWMHandle.Instance	= TIM3,         	/* Timer 3 */
+		.fDuty					= 0.0,				/* Initial duty cycle (%) */
+		.ulFreq					= 50,				/* Frequency (Hz) */
+		.ucChannel				= TIM_CHANNEL_2,	/* Channel 2 */
+		.tGPIO.tGPIOInit.Pin	= GPIO_PIN_7,		/* PA7 pin */
+		.tGPIO.tGPIOPort		= GPIOA,			/* GPIOA port */
+#ifdef STM32F1_SGA_ENABLE
+		.tGPIO.ucAFMode			= NO_REMAP,			/* No remap mode */
+#endif
+	},
+	
+	/* Thruster 3 - TIM3_CH3 (PB0) */
+	[2] =
+	{
+		.tPWMHandle.Instance	= TIM3,         	/* Timer 3 */
+		.fDuty					= 0.0,				/* Initial duty cycle (%) */
+		.ulFreq					= 50,				/* Frequency (Hz) */
+		.ucChannel				= TIM_CHANNEL_3,	/* Channel 3 */
+		.tGPIO.tGPIOInit.Pin	= GPIO_PIN_0,		/* PB0 pin */
+		.tGPIO.tGPIOPort		= GPIOB,			/* GPIOB port */
+#ifdef STM32F1_SGA_ENABLE
+		.tGPIO.ucAFMode			= NO_REMAP,			/* No remap mode */
+#endif
+	},
+	
+	/* Thruster 4 - TIM3_CH4 (PB1) */
+	[3] =
+	{
+		.tPWMHandle.Instance	= TIM3,         	/* Timer 3 */
+		.fDuty					= 0.0,				/* Initial duty cycle (%) */
+		.ulFreq					= 50,				/* Frequency (Hz) */
+		.ucChannel				= TIM_CHANNEL_4,	/* Channel 4 */
+		.tGPIO.tGPIOInit.Pin	= GPIO_PIN_1,		/* PB1 pin */
+		.tGPIO.tGPIOPort		= GPIOB,			/* GPIOB port */
+#ifdef STM32F1_SGA_ENABLE
+		.tGPIO.ucAFMode			= NO_REMAP,			/* No remap mode */
+#endif
+	},
+};
+
+/* ADCʾ */
+tagADC_T demoADC[] = 
+{
+	[0]=
+	{ 
+		.tGPIO.tGPIOInit.Pin 					= GPIO_PIN_6,					/* GPIO */
+		.tGPIO.tGPIOInit.Mode 					= GPIO_MODE_ANALOG,				/* GPIOģʽ */
+		.tGPIO.tGPIOInit.Pull 					= GPIO_NOPULL,					/* GPIOãǷҪӲ */
+		.tGPIO.tGPIOInit.Speed 					= GPIO_SPEED_FREQ_HIGH,			/* GPIOٶ */	
+		.tGPIO.tGPIOPort 						= GPIOA,						/* GPIO */
+		
+		.tADCHandle.Instance					= ADC1,
+#ifdef STM32F4_SGA_ENABLE
+		.tADCHandle.Init.ClockPrescaler			= ADC_CLOCK_SYNC_PCLK_DIV4,		/* ʱ */
+#endif
+		.tADCHandle.Init.DataAlign				= ADC_DATAALIGN_RIGHT,			/* Ҷ */
+		.tADCHandle.Init.ScanConvMode			= DISABLE,						/* ɨģʽ */
+		.tADCHandle.Init.ContinuousConvMode		= DISABLE,						/*رת */
+		.tADCHandle.Init.NbrOfConversion		= 1,							/* 1תڹ Ҳֻת1 */ 
+		.tADCHandle.Init.DiscontinuousConvMode	= DISABLE,						/* ֹģʽ */
+		.tADCHandle.Init.NbrOfDiscConversion	= 0,							/* ͨΪ0 */
+		.tADCHandle.Init.ExternalTrigConv		= ADC_SOFTWARE_START,			/*  */
+		
+		.tADCChannel.Channel					= ADC_CHANNEL_6,				/* ͨ */
+		.tADCChannel.Rank						= 1,							/* 1У1 */
+#ifdef STM32F1_SGA_ENABLE
+		.tADCChannel.SamplingTime				= ADC_SAMPLETIME_239CYCLES_5,	/* ʱ */
+#endif
+#ifdef STM32F4_SGA_ENABLE
+		.tADCChannel.SamplingTime				= ADC_SAMPLETIME_3CYCLES,		/* ʱ */
+#endif
+		.ucAverageNum							= 10,							/* ֵ˲ֵ */
+	},
+};
+
+/* DACʾ */
+tagDAC_T demoDAC[] = 
+{
+	/* ͨ1ãPA4 */
+	[0] =
+	{
+		.ulDACChannelSelect 			= DAC_CHANNEL_1,
+		.tDACChannel.DAC_Trigger 		= DAC_TRIGGER_NONE,
+		.tDACChannel.DAC_OutputBuffer 	= DAC_OUTPUTBUFFER_DISABLE,
+	},
+	/* ͨ2ãPA5 */
+	[1] =
+	{
+		.ulDACChannelSelect 			= DAC_CHANNEL_2,
+		.tDACChannel.DAC_Trigger 		= DAC_TRIGGER_NONE,
+		.tDACChannel.DAC_OutputBuffer 	= DAC_OUTPUTBUFFER_DISABLE,
+	},
+};
+
+/* CANʾ */
+tagCAN_T CAN =
+{
+	/* CAN */
+	.tCANHandle.Instance 								= CAN1,
+	.tCANHandle.Init.Mode 								= CAN_MODE_LOOPBACK,			/* ģʽ */
+
+#ifdef STM32F1_SGA_ENABLE	//F1ϵ500Kbps
+	.tCANHandle.Init.Prescaler 							= 6,							/* Ƶϵ */
+	.tCANHandle.Init.SyncJumpWidth 						= CAN_SJW_1TQ,					/* ͬԾ */
+	.tCANHandle.Init.TimeSeg1 							= CAN_BS1_10TQ,					/* Tbs1 */
+	.tCANHandle.Init.TimeSeg2 							= CAN_BS2_1TQ,					/* Tbs2 */
+#endif
+	
+#ifdef STM32F4_SGA_ENABLE	//F4ϵ500Kbps
+	.tCANHandle.Init.Prescaler 							= 7,							/* Ƶϵ */
+	.tCANHandle.Init.SyncJumpWidth 						= CAN_SJW_1TQ,					/* ͬԾ */
+	.tCANHandle.Init.TimeSeg1 							= CAN_BS1_10TQ,					/* Tbs1 */
+	.tCANHandle.Init.TimeSeg2 							= CAN_BS2_1TQ,					/* Tbs2 */
+#endif
+	.tCANHandle.Init.TimeTriggeredMode 					= DISABLE,						/* ʱ䴥ͨģʽ */
+	.tCANHandle.Init.AutoBusOff 						= DISABLE,						/* Զ߹ */
+	.tCANHandle.Init.AutoRetransmission 				= DISABLE,						/* ˯ģʽͨ */
+	.tCANHandle.Init.AutoWakeUp 						= DISABLE,						/* ֹԶ */
+	.tCANHandle.Init.ReceiveFifoLocked 					= DISABLE,						/* Ĳ,µĸǾɵ */
+	.tCANHandle.Init.TransmitFifoPriority 				= DISABLE,						/* ȼɱıʶ */
+
+	/* CAN */
+	.ucCANFilterNum										= 2,							/* Ҫù */
+
+	.tCANFilter[0].FilterBank 							= 0,							/* 0 */
+	.tCANFilter[0].FilterMode 							= CAN_FILTERMODE_IDLIST,		/* ģʽ */
+	.tCANFilter[0].FilterScale 							= CAN_FILTERSCALE_32BIT,		/* λ */
+	.tCANFilter[0].FilterIdHigh 						= 0x55 << 5,		//0x55ͨ
+	.tCANFilter[0].FilterIdLow 							= 0x00,
+	.tCANFilter[0].FilterMaskIdHigh 					= 0xffff,			//ȫͨ
+	.tCANFilter[0].FilterMaskIdLow 						= 0|0x02,			//ֻ֡
+	.tCANFilter[0].FilterFIFOAssignment 				= CAN_RX_FIFO0,					/* FIFO0 */
+	.tCANFilter[0].FilterActivation 					= ENABLE,						/* 0 */
+	.tCANFilter[0].SlaveStartFilterBank 				= 14,							/* CANʼ */
+
+	.tCANFilter[1].FilterBank 							= 1,							/* 1 */
+	.tCANFilter[1].FilterMode 							= CAN_FILTERMODE_IDMASK,		/* ������ģʽ */
+	.tCANFilter[1].FilterScale 							= CAN_FILTERSCALE_32BIT,		/* ������λ�� */
+	.tCANFilter[1].FilterIdHigh 						= 0x55 << 5,		//0x55ͨ��
+	.tCANFilter[1].FilterIdLow 							= 0x0000,
+	.tCANFilter[1].FilterMaskIdHigh 					= 0xffff,			//����ȫͨ��
+	.tCANFilter[1].FilterMaskIdLow 						= 0|0x02,			//ֻ������֡
+	.tCANFilter[1].FilterFIFOAssignment 				= CAN_RX_FIFO1,					/* ������������FIFO1 */
+	.tCANFilter[1].FilterActivation 					= ENABLE,						/* ���������0 */
+	.tCANFilter[1].SlaveStartFilterBank 				= 14,							/* ��CAN��������ʼ */
+
+	/* CAN TX���� */
+	.tCANTxHeader.StdId 								= 0x55,							/* ��׼��ʶ�� */
+	.tCANTxHeader.ExtId 								= 0x00,							/* ��չ��ʶ����29λ�� */
+	.tCANTxHeader.IDE 									= CAN_ID_STD,    				/* ʹ�ñ�׼֡ */
+	.tCANTxHeader.RTR 									= CAN_RTR_DATA,					/* ����֡ */
+  
+	/* CAN �������ȼ� */
+	.ucTxPriority										= 9,							/* ���������ȼ� */
+	.ucTxSubPriority									= 1,							/* ���ʹ����ȼ� */
+
+	/* CAN �������ȼ� */
+	.ucRxPriority										= 2,							/* ���������ȼ� */
+	.ucRxSubPriority									= 1,							/* ���մ����ȼ� */
+	/* CAN GPIO���� */
+	.tGPIO[0].tGPIOInit.Pin 							= GPIO_PIN_12,					/* GPIO���� */
+	.tGPIO[0].tGPIOInit.Mode 							= GPIO_MODE_AF_PP,				/* GPIOģʽ */
+	.tGPIO[0].tGPIOInit.Pull 							= GPIO_PULLUP,					/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+	.tGPIO[0].tGPIOInit.Speed 							= GPIO_SPEED_FREQ_HIGH,			/* GPIO�ٶ� */	
+	.tGPIO[0].tGPIOPort 								= GPIOA,						/* GPIO���� */			
+
+	.tGPIO[1].tGPIOInit.Pin 							= GPIO_PIN_11,					/* GPIO���� */
+#ifdef STM32F1_SGA_ENABLE
+	.tGPIO[1].tGPIOInit.Mode 							= GPIO_MODE_AF_INPUT,			/* GPIOģʽ */
+#endif
+#ifdef STM32F4_SGA_ENABLE
+	.tGPIO[1].tGPIOInit.Mode 							= GPIO_MODE_AF_PP,				/* GPIOģʽ */
+#endif
+	.tGPIO[1].tGPIOInit.Pull 							= GPIO_PULLUP,					/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+	.tGPIO[1].tGPIOInit.Speed 							= GPIO_SPEED_FREQ_HIGH,			/* GPIO�ٶ� */	
+	.tGPIO[1].tGPIOPort 								= GPIOA,						/* GPIO���� */			
+};
+
+
+/**************************  BSP����ؾ����ʼ��ʾ��  **************************/
+
+
+
+/* ADS1256���ʾ�� */
+tagADS1256_T demoADS1256 = 
+{
+	.tDrdyGPIO.tGPIOInit.Pin 				= GPIO_PIN_9,				/* Drdy  GPIO���� */
+	.tDrdyGPIO.tGPIOInit.Mode				= GPIO_MODE_INPUT,			/* GPIOģʽ�������ش��� */
+	.tDrdyGPIO.tGPIOInit.Pull 				= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+	.tDrdyGPIO.tGPIOInit.Speed 				= GPIO_SPEED_FREQ_LOW,		/* GPIO�ٶ� */	
+	.tDrdyGPIO.tGPIOPort 					= GPIOD,					/* GPIO���� */
+	
+	.tCsGPIO.tGPIOInit.Pin 					= GPIO_PIN_12,				/* CS  GPIO���� */
+	.tCsGPIO.tGPIOInit.Mode 				= GPIO_MODE_OUTPUT_PP,		/* GPIOģʽ�������ش��� */
+	.tCsGPIO.tGPIOInit.Pull 				= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+	.tCsGPIO.tGPIOInit.Speed 				= GPIO_SPEED_FREQ_HIGH,		/* GPIO�ٶ� */	
+	.tCsGPIO.tGPIOPort 						= GPIOB,					/* GPIO���� */
+	
+	.tSPI.tSPIHandle.Instance 				= SPI2,
+	.tSPI.tSPIHandle.Init.Mode 				= SPI_MODE_MASTER,
+	.tSPI.tSPIHandle.Init.Direction 		= SPI_DIRECTION_2LINES,
+	.tSPI.tSPIHandle.Init.DataSize 			= SPI_DATASIZE_8BIT,
+	.tSPI.tSPIHandle.Init.CLKPolarity 		= SPI_POLARITY_LOW,
+	.tSPI.tSPIHandle.Init.CLKPhase 			= SPI_PHASE_2EDGE,
+	.tSPI.tSPIHandle.Init.NSS 				= SPI_NSS_SOFT,
+	.tSPI.tSPIHandle.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256,
+	.tSPI.tSPIHandle.Init.FirstBit 			= SPI_FIRSTBIT_MSB,
+	.tSPI.tSPIHandle.Init.TIMode 			= SPI_TIMODE_DISABLE,
+	.tSPI.tSPIHandle.Init.CRCCalculation 	= SPI_CRCCALCULATION_DISABLE,
+	.tSPI.tSPIHandle.Init.CRCPolynomial 	= 7,	
+#if defined (STM32L4_SGA_ENABLE)
+	.tSPI.tSPIHandle.Init.CRCLength 		= SPI_CRC_LENGTH_DATASIZE,
+	.tSPI.tSPIHandle.Init.NSSPMode 			= SPI_NSS_PULSE_ENABLE,	
+#endif
+
+	.tSPI.tGPIO[0].tGPIOInit.Pin 			= GPIO_PIN_13,				/* GPIO���� */
+	.tSPI.tGPIO[0].tGPIOInit.Mode 			= GPIO_MODE_AF_PP,			/* GPIOģʽ */
+	.tSPI.tGPIO[0].tGPIOInit.Pull 			= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+	.tSPI.tGPIO[0].tGPIOInit.Speed 			= GPIO_SPEED_FREQ_HIGH,		/* GPIO�ٶ� */	
+	.tSPI.tGPIO[0].tGPIOPort 				= GPIOB,					/* GPIO���� */
+	.tSPI.tGPIO[0].ucAFMode					= NO_REMAP,					/* GPIO��ӳ�� */
+	
+	.tSPI.tGPIO[1].tGPIOInit.Pin 			= GPIO_PIN_15,				/* GPIO���� */
+	.tSPI.tGPIO[1].tGPIOInit.Mode 			= GPIO_MODE_AF_PP,			/* GPIOģʽ */
+	.tSPI.tGPIO[1].tGPIOInit.Pull 			= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+	.tSPI.tGPIO[1].tGPIOInit.Speed 			= GPIO_SPEED_FREQ_HIGH,		/* GPIO�ٶ� */	
+	.tSPI.tGPIO[1].tGPIOPort 				= GPIOB,					/* GPIO���� */
+	.tSPI.tGPIO[1].ucAFMode					= NO_REMAP,					/* GPIO��ӳ�� */
+	
+	.tSPI.tGPIO[2].tGPIOInit.Pin 			= GPIO_PIN_14,				/* GPIO���� */
+	.tSPI.tGPIO[2].tGPIOInit.Mode 			= GPIO_MODE_AF_PP,			/* GPIOģʽ */
+	.tSPI.tGPIO[2].tGPIOInit.Pull 			= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+	.tSPI.tGPIO[2].tGPIOInit.Speed 			= GPIO_SPEED_FREQ_HIGH,		/* GPIO�ٶ� */	
+	.tSPI.tGPIO[2].tGPIOPort 				= GPIOB,					/* GPIO���� */
+	.tSPI.tGPIO[2].ucAFMode					= NO_REMAP,					/* GPIO��ӳ�� */
+};
+
+/* DS3231ʾ�� */
+tagDS3231_T tDS3231 = 
+{
+	/* SCL�� */
+	.tIICSoft.tIICSoft[0].tGPIOInit.Pin 	= GPIO_PIN_5,				/* GPIO���� */
+	.tIICSoft.tIICSoft[0].tGPIOInit.Mode 	= GPIO_MODE_OUTPUT_PP,		/* GPIOģʽ */
+	.tIICSoft.tIICSoft[0].tGPIOInit.Pull 	= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+	.tIICSoft.tIICSoft[0].tGPIOInit.Speed 	= GPIO_SPEED_FREQ_HIGH,		/* GPIO�ٶ� */	
+	.tIICSoft.tIICSoft[0].tGPIOPort 		= GPIOE,					/* GPIO���� */
+	
+	/* SDA�� */
+	.tIICSoft.tIICSoft[1].tGPIOInit.Pin 	= GPIO_PIN_4,				/* GPIO���� */
+	.tIICSoft.tIICSoft[1].tGPIOInit.Mode 	= GPIO_MODE_INPUT,			/* GPIOģʽ */
+	.tIICSoft.tIICSoft[1].tGPIOInit.Pull 	= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+	.tIICSoft.tIICSoft[1].tGPIOInit.Speed 	= GPIO_SPEED_FREQ_HIGH,		/* GPIO�ٶ� */	
+	.tIICSoft.tIICSoft[1].tGPIOPort 		= GPIOE,					/* GPIO���� */
+};
+
+/* SD����FATFS�ļ�ϵͳʾ�� */
+tagFATFS_T tFATFS = 
+{
+	.tSPI.tSPIHandle.Instance 				= SPI1,
+	.tSPI.tSPIHandle.Init.Mode 				= SPI_MODE_MASTER,
+	.tSPI.tSPIHandle.Init.Direction 		= SPI_DIRECTION_2LINES,
+	.tSPI.tSPIHandle.Init.DataSize 			= SPI_DATASIZE_8BIT,
+	.tSPI.tSPIHandle.Init.CLKPolarity 		= SPI_POLARITY_HIGH,
+	.tSPI.tSPIHandle.Init.CLKPhase 			= SPI_PHASE_2EDGE,
+	.tSPI.tSPIHandle.Init.NSS 				= SPI_NSS_SOFT,
+	.tSPI.tSPIHandle.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256,
+	.tSPI.tSPIHandle.Init.FirstBit 			= SPI_FIRSTBIT_MSB,
+	.tSPI.tSPIHandle.Init.TIMode 			= SPI_TIMODE_DISABLE,
+	.tSPI.tSPIHandle.Init.CRCCalculation 	= SPI_CRCCALCULATION_DISABLE,
+	.tSPI.tSPIHandle.Init.CRCPolynomial 	= 7,	
+#if defined (STM32L4_SGA_ENABLE)
+	.tSPI.tSPIHandle.Init.CRCLength 		= SPI_CRC_LENGTH_DATASIZE,
+	.tSPI.tSPIHandle.Init.NSSPMode 			= SPI_NSS_PULSE_ENABLE,	
+#endif
+	
+	.tSPI.tGPIO[0].tGPIOInit.Pin 			= GPIO_PIN_5,				/* GPIO���� */
+	.tSPI.tGPIO[0].tGPIOInit.Mode 			= GPIO_MODE_AF_PP,			/* GPIOģʽ */
+	.tSPI.tGPIO[0].tGPIOInit.Pull 			= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+	.tSPI.tGPIO[0].tGPIOInit.Speed 			= GPIO_SPEED_FREQ_HIGH,		/* GPIO�ٶ� */	
+	.tSPI.tGPIO[0].tGPIOPort 				= GPIOA,					/* GPIO���� */
+	
+	.tSPI.tGPIO[1].tGPIOInit.Pin 			= GPIO_PIN_7,				/* GPIO���� */
+	.tSPI.tGPIO[1].tGPIOInit.Mode 			= GPIO_MODE_AF_PP,			/* GPIOģʽ */
+	.tSPI.tGPIO[1].tGPIOInit.Pull 			= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+	.tSPI.tGPIO[1].tGPIOInit.Speed 			= GPIO_SPEED_FREQ_HIGH,		/* GPIO�ٶ� */	
+	.tSPI.tGPIO[1].tGPIOPort 				= GPIOA,					/* GPIO���� */
+	
+	.tSPI.tGPIO[2].tGPIOInit.Pin 			= GPIO_PIN_6,				/* GPIO���� */
+	.tSPI.tGPIO[2].tGPIOInit.Mode 			= GPIO_MODE_AF_PP,			/* GPIOģʽ */
+	.tSPI.tGPIO[2].tGPIOInit.Pull 			= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+	.tSPI.tGPIO[2].tGPIOInit.Speed 			= GPIO_SPEED_FREQ_HIGH,		/* GPIO�ٶ� */	
+	.tSPI.tGPIO[2].tGPIOPort 				= GPIOA,					/* GPIO���� */
+};
+
+/* AT24ϵ��ʾ�� */
+tagAT24CXX_T tAT24CXX = 
+{
+	/* SCL�� */
+	.tIIC.tIICSoft[0].tGPIOInit.Pin 		= GPIO_PIN_0,				/* GPIO���� */
+	.tIIC.tIICSoft[0].tGPIOInit.Mode		= GPIO_MODE_OUTPUT_PP,		/* GPIOģʽ */
+	.tIIC.tIICSoft[0].tGPIOInit.Pull		= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+	.tIIC.tIICSoft[0].tGPIOInit.Speed		= GPIO_SPEED_FREQ_HIGH,		/* GPIO�ٶ� */	
+	.tIIC.tIICSoft[0].tGPIOPort 			= GPIOA,					/* GPIO���� */
+	
+	/* SDA�� */
+	.tIIC.tIICSoft[1].tGPIOInit.Pin 		= GPIO_PIN_1,				/* GPIO���� */
+	.tIIC.tIICSoft[1].tGPIOInit.Mode		= GPIO_MODE_INPUT,			/* GPIOģʽ */
+	.tIIC.tIICSoft[1].tGPIOInit.Pull		= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+	.tIIC.tIICSoft[1].tGPIOInit.Speed		= GPIO_SPEED_FREQ_HIGH,		/* GPIO�ٶ� */	
+	.tIIC.tIICSoft[1].tGPIOPort 			= GPIOA,					/* GPIO���� */
+};
+
+/* OLEDʾ�� */
+tagOLED_T tOLED = 
+{
+	/* SCL�� */
+	.tIIC.tIICSoft[0].tGPIOInit.Pin 		= GPIO_PIN_0,				/* GPIO���� */
+	.tIIC.tIICSoft[0].tGPIOInit.Mode		= GPIO_MODE_OUTPUT_PP,		/* GPIOģʽ */
+	.tIIC.tIICSoft[0].tGPIOInit.Pull		= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+	.tIIC.tIICSoft[0].tGPIOInit.Speed		= GPIO_SPEED_FREQ_HIGH,		/* GPIO�ٶ� */	
+	.tIIC.tIICSoft[0].tGPIOPort 			= GPIOA,					/* GPIO���� */
+	
+	/* SDA�� */
+	.tIIC.tIICSoft[1].tGPIOInit.Pin 		= GPIO_PIN_1,				/* GPIO���� */
+	.tIIC.tIICSoft[1].tGPIOInit.Mode		= GPIO_MODE_INPUT,			/* GPIOģʽ */
+	.tIIC.tIICSoft[1].tGPIOInit.Pull		= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+	.tIIC.tIICSoft[1].tGPIOInit.Speed		= GPIO_SPEED_FREQ_HIGH,		/* GPIO�ٶ� */	
+	.tIIC.tIICSoft[1].tGPIOPort 			= GPIOA,					/* GPIO���� */
+};
+
+/* PS2�ֱ�ʾ�� */
+tagPS2_T PS2 = 
+{
+	//DI/DAT
+	.tGPIO[0].tGPIOInit.Pin 			= GPIO_PIN_1,
+	.tGPIO[0].tGPIOInit.Mode 			= GPIO_MODE_INPUT,
+	.tGPIO[0].tGPIOInit.Pull 			= GPIO_NOPULL,
+	.tGPIO[0].tGPIOPort 				= GPIOB,
+	.tGPIO[0].ucAFMode 					= NO_REMAP,
+
+	//DO/CMD
+	.tGPIO[1].tGPIOInit.Pin 			= GPIO_PIN_2,
+	.tGPIO[1].tGPIOInit.Mode 			= GPIO_MODE_OUTPUT_PP,
+	.tGPIO[1].tGPIOInit.Pull 			= GPIO_NOPULL,
+	.tGPIO[1].tGPIOInit.Speed 			= GPIO_SPEED_FREQ_HIGH,
+	.tGPIO[1].tGPIOPort 				= GPIOB,
+	.tGPIO[1].ucAFMode 					= NO_REMAP,
+
+	//CS
+	.tGPIO[2].tGPIOInit.Pin 			= GPIO_PIN_7,
+	.tGPIO[2].tGPIOInit.Mode 			= GPIO_MODE_OUTPUT_PP,
+	.tGPIO[2].tGPIOInit.Pull 			= GPIO_NOPULL,
+	.tGPIO[2].tGPIOInit.Speed 			= GPIO_SPEED_FREQ_HIGH,
+	.tGPIO[2].tGPIOPort 				= GPIOE,
+	.tGPIO[2].ucAFMode 					= NO_REMAP,
+
+	//CLK
+	.tGPIO[3].tGPIOInit.Pin 			= GPIO_PIN_8,
+	.tGPIO[3].tGPIOInit.Mode 			= GPIO_MODE_OUTPUT_PP,
+	.tGPIO[3].tGPIOInit.Pull 			= GPIO_NOPULL,
+	.tGPIO[3].tGPIOInit.Speed 			= GPIO_SPEED_FREQ_HIGH,
+	.tGPIO[3].tGPIOPort 				= GPIOE,
+	.tGPIO[3].ucAFMode 					= NO_REMAP,
+};
+
+/* JY901Sʾ�� */
+tagJY901_T JY901S = 
+{
+	.tConfig.ucBaud 	= JY901_RXBAUD_9600,
+	.tConfig.ucRate		= JY901_RX_1HZ,
+	.tConfig.usType		= JY901_OUTPUT_ACCEL | JY901_OUTPUT_GYRO | JY901_OUTPUT_ANGLE | JY901_OUTPUT_MAG,
+    .tConfig.ucOrient   = JY901_ORIENT_HORIZONTAL,
+    .tConfig.ucAxis     = JY901_AXIS_9,
+
+	.tUART.tUARTHandle.Instance 				= USART2,			/* STM32 �����豸 */
+	.tUART.tUARTHandle.Init.BaudRate   			= 9600,				/* ���ڲ����� */
+	.tUART.tUARTHandle.Init.WordLength 			= UART_WORDLENGTH_8B,
+	.tUART.tUARTHandle.Init.StopBits   			= UART_STOPBITS_1,
+	.tUART.tUARTHandle.Init.Parity     			= UART_PARITY_NONE,
+	.tUART.tUARTHandle.Init.HwFlowCtl  			= UART_HWCONTROL_NONE,
+	.tUART.tUARTHandle.Init.Mode       			= UART_MODE_TX_RX,
+	.tUART.tUARTHandle.Init.OverSampling 		= UART_OVERSAMPLING_16,
+
+	.tUART.tRxInfo.usDMARxMAXSize             	= 300,                 /* �������ݳ��� ���ȱ�����Э����ֽ�*2���ϣ�ȷ�������һ���ܹ��ȶ�����һ������������֡*/
+
+#if defined (STM32L4_SGA_ENABLE)
+	.tUARTHandle.Init.OneBitSampling 	= UART_ONE_BIT_SAMPLE_DISABLE,
+	.tUARTHandle.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT,
+#endif
+	
+	.tUART.ucPriority							= 1,				/* �ж����ȼ� */
+	.tUART.ucSubPriority						= 3,				/* �ж������ȼ� */
+	
+    .tUART.tUartDMA.bRxEnable					= true,						/* DMA����ʹ�� */
+	.tUART.tUartDMA.tDMARx.Instance					= DMA1_Channel6,
+	.tUART.tUartDMA.tDMARx.Init.Direction			= DMA_PERIPH_TO_MEMORY,
+	.tUART.tUartDMA.tDMARx.Init.PeriphInc			= DMA_PINC_DISABLE,
+	.tUART.tUartDMA.tDMARx.Init.MemInc				= DMA_MINC_ENABLE,
+	.tUART.tUartDMA.tDMARx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE,
+	.tUART.tUartDMA.tDMARx.Init.MemDataAlignment	= DMA_MDATAALIGN_BYTE,
+	.tUART.tUartDMA.tDMARx.Init.Mode				= DMA_CIRCULAR,
+	.tUART.tUartDMA.tDMARx.Init.Priority			= DMA_PRIORITY_LOW,
+
+	.tUART.tUartDMA.ucDMARxPriority				= 1,				/* DMA�ж����ȼ� */
+	.tUART.tUartDMA.ucDMARxSubPriority			= 1,				/* DMA�ж������ȼ� */
+	
+	
+	.tUART.tGPIO[0].tGPIOInit.Pin 			= GPIO_PIN_2,				/* GPIO���� */
+	.tUART.tGPIO[0].tGPIOInit.Mode 			= GPIO_MODE_AF_PP,			/* GPIOģʽ */
+	.tUART.tGPIO[0].tGPIOInit.Pull 			= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+	.tUART.tGPIO[0].tGPIOInit.Speed 		= GPIO_SPEED_FREQ_HIGH,		/* GPIO�ٶ� */	
+	.tUART.tGPIO[0].tGPIOPort 				= GPIOA,					/* GPIO���� */
+	.tUART.tGPIO[0].ucAFMode					= NO_REMAP,					/* GPIO��ӳ�� */
+	
+	.tUART.tGPIO[1].tGPIOInit.Pin 			= GPIO_PIN_3,				/* GPIO���� */
+	.tUART.tGPIO[1].tGPIOInit.Mode 			= GPIO_MODE_INPUT,			/* GPIOģʽ */
+	.tUART.tGPIO[1].tGPIOInit.Pull 			= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+	.tUART.tGPIO[1].tGPIOInit.Speed 		= GPIO_SPEED_FREQ_HIGH,		/* GPIO�ٶ� */	
+	.tUART.tGPIO[1].tGPIOPort 				= GPIOA,					/* GPIO���� */
+	.tUART.tGPIO[1].ucAFMode					= NO_REMAP,					/* GPIO��ӳ�� */
+};
+
+/* RM3100ʾ�� */
+tagRM3100_T RM3100[4] = 
+{
+	[0]=		/* ʹ��Ӳ��SPI����RM3100 */
+	{
+		.bSPIEnable								= true,
+		.tSPI.tSPIHandle.Instance 				= SPI1,
+		.tSPI.tSPIHandle.Init.Mode 				= SPI_MODE_MASTER,
+		.tSPI.tSPIHandle.Init.Direction 		= SPI_DIRECTION_2LINES,
+		.tSPI.tSPIHandle.Init.DataSize 			= SPI_DATASIZE_8BIT,
+		.tSPI.tSPIHandle.Init.CLKPolarity 		= SPI_POLARITY_LOW,
+		.tSPI.tSPIHandle.Init.CLKPhase 			= SPI_PHASE_1EDGE,
+		.tSPI.tSPIHandle.Init.NSS 				= SPI_NSS_SOFT,
+		.tSPI.tSPIHandle.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64,
+		.tSPI.tSPIHandle.Init.FirstBit 			= SPI_FIRSTBIT_MSB,
+		.tSPI.tSPIHandle.Init.TIMode 			= SPI_TIMODE_DISABLE,
+		.tSPI.tSPIHandle.Init.CRCCalculation 	= SPI_CRCCALCULATION_DISABLE,
+		.tSPI.tSPIHandle.Init.CRCPolynomial 	= 10,	
+#if defined (STM32L4_SGA_ENABLE)
+		.tSPI.tSPIHandle.Init.CRCLength 		= SPI_CRC_LENGTH_DATASIZE,
+		.tSPI.tSPIHandle.Init.NSSPMode 			= SPI_NSS_PULSE_ENABLE,	
+#endif
+		/**SPI1 GPIO Configuration
+		PA5     ------> SPI1_SCK
+		PA6     ------> SPI1_MISO
+		PA7     ------> SPI1_MOSI
+		PC5     ------> SPI1_NSS
+		*/
+		.tSPI.tGPIO[0].tGPIOInit.Pin	= GPIO_PIN_5,
+		.tSPI.tGPIO[0].tGPIOInit.Mode 	= GPIO_MODE_AF_PP,
+		.tSPI.tGPIO[0].tGPIOInit.Speed 	= GPIO_SPEED_FREQ_HIGH,
+		.tSPI.tGPIO[0].tGPIOPort		= GPIOA,
+		.tSPI.tGPIO[0].ucAFMode			= NO_REMAP,
+
+		.tSPI.tGPIO[1].tGPIOInit.Pin 	= GPIO_PIN_6,
+		.tSPI.tGPIO[1].tGPIOInit.Mode 	= GPIO_MODE_AF_PP,
+		.tSPI.tGPIO[1].tGPIOInit.Pull 	= GPIO_NOPULL,
+		.tSPI.tGPIO[1].tGPIOPort		= GPIOA,
+		.tSPI.tGPIO[1].ucAFMode			= NO_REMAP,
+
+		.tSPI.tGPIO[2].tGPIOInit.Pin	= GPIO_PIN_7,
+		.tSPI.tGPIO[2].tGPIOInit.Mode 	= GPIO_MODE_AF_PP,
+		.tSPI.tGPIO[2].tGPIOInit.Speed 	= GPIO_SPEED_FREQ_HIGH,
+		.tSPI.tGPIO[2].tGPIOPort		= GPIOA,
+		.tSPI.tGPIO[2].ucAFMode			= NO_REMAP,
+		
+		.tSPI.tGPIO[3].tGPIOInit.Pin	= GPIO_PIN_5,
+		.tSPI.tGPIO[3].tGPIOInit.Mode 	= GPIO_MODE_OUTPUT_PP,
+		.tSPI.tGPIO[3].tGPIOInit.Speed 	= GPIO_SPEED_FREQ_HIGH,
+		.tSPI.tGPIO[3].tGPIOPort		= GPIOC,
+		.tSPI.tGPIO[3].ucAFMode			= NO_REMAP,
+	
+	},
+	[1]=		/* ʹ������SPI����RM3100 */
+	{
+		/**SPI Soft GPIO Configuration
+		PE2     ------> SPI_SCK
+		PE4     ------> SPI_MISO
+		PE3     ------> SPI_MOSI
+		PE1     ------> SPI_NSS 
+		*/
+		.bSPISoftEnable							= true,
+		.tSoftSPI.tSPISoft[0].tGPIOInit.Pin		= GPIO_PIN_2,
+		.tSoftSPI.tSPISoft[0].tGPIOInit.Mode 	= GPIO_MODE_OUTPUT_PP,
+		.tSoftSPI.tSPISoft[0].tGPIOInit.Pull 	= GPIO_PULLUP,
+		.tSoftSPI.tSPISoft[0].tGPIOInit.Speed 	= GPIO_SPEED_FREQ_HIGH,
+		.tSoftSPI.tSPISoft[0].tGPIOPort			= GPIOE,
+		.tSoftSPI.tSPISoft[0].ucAFMode			= NO_REMAP,
+		
+		.tSoftSPI.tSPISoft[1].tGPIOInit.Pin		= GPIO_PIN_4,
+		.tSoftSPI.tSPISoft[1].tGPIOInit.Mode 	= GPIO_MODE_INPUT,
+		.tSoftSPI.tSPISoft[1].tGPIOInit.Pull 	= GPIO_PULLUP,
+		.tSoftSPI.tSPISoft[1].tGPIOPort			= GPIOE,
+		.tSoftSPI.tSPISoft[1].ucAFMode			= NO_REMAP,
+		
+		.tSoftSPI.tSPISoft[2].tGPIOInit.Pin		= GPIO_PIN_3,
+		.tSoftSPI.tSPISoft[2].tGPIOInit.Mode 	= GPIO_MODE_OUTPUT_PP,
+		.tSoftSPI.tSPISoft[2].tGPIOInit.Pull 	= GPIO_PULLUP,
+		.tSoftSPI.tSPISoft[2].tGPIOInit.Speed 	= GPIO_SPEED_FREQ_HIGH,
+		.tSoftSPI.tSPISoft[2].tGPIOPort			= GPIOE,
+		.tSoftSPI.tSPISoft[2].ucAFMode			= NO_REMAP,
+		
+		.tSoftSPI.tSPISoft[3].tGPIOInit.Pin		= GPIO_PIN_1,
+		.tSoftSPI.tSPISoft[3].tGPIOInit.Mode 	= GPIO_MODE_OUTPUT_PP,
+		.tSoftSPI.tSPISoft[3].tGPIOInit.Pull 	= GPIO_PULLUP,
+		.tSoftSPI.tSPISoft[3].tGPIOInit.Speed 	= GPIO_SPEED_FREQ_HIGH,
+		.tSoftSPI.tSPISoft[3].tGPIOPort			= GPIOE,
+		.tSoftSPI.tSPISoft[3].ucAFMode			= NO_REMAP,
+	},
+};
+
+/* MS5837ʾ�� */
+tagMS5837_T MS5837 = 
+{
+    /* �����ֱ������� */
+	.setOSR = MS5837_OSR4096,
+
+	/* SCL�� */
+	.tIIC.tIICSoft[0].tGPIOInit.Pin 		= GPIO_PIN_4,				/* GPIO���� */
+	.tIIC.tIICSoft[0].tGPIOInit.Mode 		= GPIO_MODE_OUTPUT_PP,		/* GPIOģʽ */
+	.tIIC.tIICSoft[0].tGPIOInit.Pull 		= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+	.tIIC.tIICSoft[0].tGPIOInit.Speed 		= GPIO_SPEED_FREQ_HIGH,		/* GPIO�ٶ� */	
+	.tIIC.tIICSoft[0].tGPIOPort 			= GPIOC,					/* GPIO���� */
+
+	/* SDA�� */
+	.tIIC.tIICSoft[1].tGPIOInit.Pin 		= GPIO_PIN_5,				/* GPIO���� */
+	.tIIC.tIICSoft[1].tGPIOInit.Mode		= GPIO_MODE_INPUT,			/* GPIOģʽ */
+	.tIIC.tIICSoft[1].tGPIOInit.Pull		= GPIO_NOPULL,				/* GPIO���������ã��Ƿ���Ҫ��������Ӳ�� */
+	.tIIC.tIICSoft[1].tGPIOInit.Speed		= GPIO_SPEED_FREQ_HIGH,		/* GPIO�ٶ� */	
+	.tIIC.tIICSoft[1].tGPIOPort 			= GPIOC,					/* GPIO���� */
+};
+
+/* PIDʾ�� */
+tagPID_T PID = 
+{
+	.fKp = 0.8f,
+	.fKi = 0.25,
+	.fKd = 0.01,
+};
+
